@@ -7,16 +7,19 @@ script = "script"
 
 # Aevum Testnet — QDay Builder Challenge #1
 # https://qday.io/builder-challenge
-rpc_endpoints = {
-    aevum = "https://rpc-test.qday.info",
-    aevumws = "wss://rpc-test.qday.info",
-}
+#
+#   Chain ID      44005  (`cast chain-id` returns 0xabe5 = 44005)
+#   RPC           https://rpc-test.qday.info
+#   Explorer      https://explorer-test.qday.info
+#   Gas currency  tQDAY
+#   tUSD8         0x456569838f1d43009A91ebA4263147Afd7233483  (ERC-20, 6 dp)
+#   Faucet        https://faucet.qday.info  (claim(address) is operator-only;
+#                  the web UI is behind Cloudflare Turnstile)
+#
+# The RPC alias is in the [rpc_endpoints] section below because Foundry 1.x
+# does not accept it as a profile key.
+
 chain_id = 44005
-# Chain ID 44005 is QDay Aevum Testnet. `cast chain-id` against the RPC
-# returns 0xabe5 = 44005, which is the check that the network is right.
-# The tUSD8 test stablecoin is at 0x456569838f1d43009A91ebA4263147Afd7233483
-# (ERC-20, 6 decimals).
-tUSD8 = "0x456569838f1d43009A91ebA4263147Afd7233483"
 
 # Polygon CDK based. Cancun is what the node reports; Prague is not enabled.
 evm_version = "cancun"
@@ -33,6 +36,7 @@ int_types = "long"
 
 [rpc_endpoints]
 aevum = "https://rpc-test.qday.info"
+aevumws = "wss://rpc-test.qday.info"
 
 [etherscan]
 aevum = { key = "", url = "https://explorer-test.qday.info/api" }
