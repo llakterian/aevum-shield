@@ -2,7 +2,7 @@
 pragma solidity ^0.8.35;
 
 import {Test} from "forge-std/Test.sol";
-import {MockToken} from "./mocks/MockToken.sol";
+import {MockToken} from "../src/mocks/MockToken.sol";
 import {PayPolicy} from "../src/PayPolicy.sol";
 import {InvoiceEscrow} from "../src/InvoiceEscrow.sol";
 import {PaymentAgent} from "../src/PaymentAgent.sol";
@@ -82,7 +82,11 @@ contract AevumShieldTest is Test {
         policy.approve(address(escrow), id);
     }
 
-    function _check(bytes32 id) internal view returns (PayPolicy.Decision decision, string memory why) {
+    function _check(bytes32 id)
+        internal
+        view
+        returns (PayPolicy.Decision decision, string memory why)
+    {
         return policy.check(address(escrow), id, operator);
     }
 
@@ -137,9 +141,7 @@ contract AevumShieldTest is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                PayPolicy.PolicyDenied.selector,
-                PayPolicy.Decision.Paused,
-                "payments are paused"
+                PayPolicy.PolicyDenied.selector, PayPolicy.Decision.Paused, "payments are paused"
             )
         );
         vm.prank(operator);
@@ -576,9 +578,7 @@ contract AevumShieldTest is Test {
         escrow.pay(id, address(policy));
 
         // The reservation is spent. Pulling again cannot move more money.
-        vm.expectRevert(
-            abi.encodeWithSelector(PayPolicy.ReservationNotPending.selector, id)
-        );
+        vm.expectRevert(abi.encodeWithSelector(PayPolicy.ReservationNotPending.selector, id));
         policy.pull(id, address(escrow));
     }
 

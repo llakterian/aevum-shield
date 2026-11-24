@@ -2,13 +2,20 @@
 out/
 cache/
 broadcast/*/dry-run/
-docs/
-.env
-.env.*
-!.env.example
+
+# The local rehearsal records. They are written on every `local-up.sh` run
+# and they only ever describe anvil. The Aevum deployment record under
+# broadcast/Deploy.s.sol/ is kept — it is the evidence.
+broadcast/Local.s.sol/
 
 # Node
 node_modules/
+
+# Secrets
+.env
+.env.*
+!.env.example
+app/.env
 
 # OS
 .DS_Store

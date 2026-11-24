@@ -21,8 +21,12 @@ script = "script"
 
 chain_id = 44005
 
-# Polygon CDK based. Cancun is what the node reports; Prague is not enabled.
-evm_version = "cancun"
+# Polygon CDK based. Shanghai, not Cancun: Aevum's node rejects the
+# Cancun-only opcodes (MCOPY, TSTORE, TLOAD) and blob operations. Compiling
+# for Cancun makes solc emit MCOPY for ordinary memory copies and TSTORE
+# for transient storage, so a Cancun build fails at runtime on this chain.
+# The official `qday-io/aevum-starter-kit` uses the same setting.
+evm_version = "shanghai"
 solc = "0.8.35"
 optimizer = true
 optimizer_runs = 200
@@ -45,6 +49,20 @@ exclude_lints = ["block-timestamp"]
 [rpc_endpoints]
 aevum = "https://rpc-test.qday.info"
 aevumws = "wss://rpc-test.qday.info"
+
+# The local rehearsal chain.
+#
+# The chain id matters more than it looks. `forge script` simulates with
+# the chain id from this file and then broadcasts to a chain that has its
+# own. Aevum is 44005 and the default profile says 44005, so the two
+# agree there. Anvil is 31337, so the default profile disagrees with it —
+# and `block.chainid` is one of the terms in the invoice id hash, which
+# made the simulation print ids that did not exist on the chain. Setting
+# the id here keeps the two in step.
+#
+# Run local rehearsals with FOUNDRY_PROFILE=local.
+[profile.local]
+chain_id = 31337
 
 [etherscan]
 aevum = { key = "", url = "https://explorer-test.qday.info/api" }

@@ -107,10 +107,7 @@ contract InvoiceEscrow is Ownable2Step, ReentrancyGuard, IInvoiceEscrow {
     //////////////////////////////////////////////////////////////*/
 
     event InvoiceCreated(
-        bytes32 indexed invoiceId,
-        address indexed payee,
-        uint256 amount,
-        uint64 deadline
+        bytes32 indexed invoiceId, address indexed payee, uint256 amount, uint64 deadline
     );
     event InvoicePaid(bytes32 indexed invoiceId, address indexed payer, uint256 amount);
     event InvoiceSettled(bytes32 indexed invoiceId, address indexed payee, uint256 amount);
@@ -167,11 +164,11 @@ contract InvoiceEscrow is Ownable2Step, ReentrancyGuard, IInvoiceEscrow {
      * deadline.
      * @return invoiceId The id the payer will use.
      */
-    function createInvoice(
-        address payee,
-        uint256 amount,
-        uint64 deadline
-    ) external onlyOwner returns (bytes32 invoiceId) {
+    function createInvoice(address payee, uint256 amount, uint64 deadline)
+        external
+        onlyOwner
+        returns (bytes32 invoiceId)
+    {
         if (payee == address(0) || amount == 0) revert ZeroAmount();
         if (deadline != 0 && deadline < block.timestamp) revert DeadlineInThePast();
 

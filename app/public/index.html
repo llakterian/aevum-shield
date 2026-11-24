@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aevum Shield — payments under enforceable policy</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2l12 5v9c0 7.5-5.1 13.2-12 14-6.9-.8-12-6.5-12-14V7z' fill='%232dd4a7'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M16 2l12 5v9c0 7.5-5.1 13.2-12 14-6.9-.8-12-6.5-12-14V7z" />
+          <path d="M11 16.5l3.5 3.5L21.5 13" class="tick" />
+        </svg>
+        <div>
+          <h1>Aevum&nbsp;Shield</h1>
+          <p class="tagline">Payments under enforceable policy</p>
+        </div>
+      </div>
+      <div class="chain" id="chainBadge">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="chainName">connecting…</span>
+      </div>
+    </header>
+
+    <main>
+      <!-- ── The policy ─────────────────────────────────────────── -->
+      <section class="panel policy" aria-labelledby="policyHeading">
+        <div class="panel-head">
+          <h2 id="policyHeading">The payer&rsquo;s policy</h2>
+          <button
+            id="pauseButton"
+            class="kill-switch"
+            type="button"
+            aria-live="polite"
+            title="Stop every new payment without trapping any funds"
+          >
+            <span class="switch-track"><span class="switch-knob"></span></span>
+            <span id="pauseLabel">Pause payments</span>
+          </button>
+        </div>
+
+        <div class="budget">
+          <div class="budget-figures">
+            <div>
+              <span class="label">Spent today</span>
+              <strong id="spent">&mdash;</strong>
+            </div>
+            <div>
+              <span class="label">Daily cap</span>
+              <strong id="cap">&mdash;</strong>
+            </div>
+            <div>
+              <span class="label">Left today</span>
+              <strong id="remaining">&mdash;</strong>
+            </div>
+          </div>
+          <div
+            class="meter"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+            aria-label="Daily budget used"
+          >
+            <div class="meter-fill" id="meterFill"></div>
+          </div>
+        </div>
+
+        <dl class="facts">
+          <div><dt>Single payment cap</dt><dd id="perPaymentCap">&mdash;</dd></div>
+          <div><dt>Per-payee daily cap</dt><dd id="perPayeeCap">&mdash;</dd></div>
+          <div><dt>Funds held by the policy</dt><dd id="balance">&mdash;</dd></div>
+        </dl>
+
+        <div class="allowlist">
+          <h3>Payees on the allowlist</h3>
+          <ul id="payeeList" class="payee-list">
+            <li class="empty">Loading…</li>
+          </ul>
+        </div>
+
+        <p class="fineprint">
+          Every number above is a contract call. There is no database behind this
+          page — it cannot show a rule the chain does not hold.
+        </p>
+      </section>
+
+      <!-- ── The agent's decision ───────────────────────────────── -->
+      <section class="panel decision" aria-labelledby="decisionHeading">
+        <div class="panel-head">
+          <h2 id="decisionHeading">The agent&rsquo;s decision</h2>
+          <span class="hint" id="decisionHint">Pick an invoice</span>
+        </div>
+
+        <div id="decisionEmpty" class="empty-state">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3l8 3.5v5c0 4.7-3.3 8.8-8 9.5-4.7-.7-8-4.8-8-9.5v-5z" />
+          </svg>
+          <p>
+            The agent has no money and no key that can move money. It can only
+            <em>ask</em> the policy for permission &mdash; and the policy always
+            answers with a reason.
+          </p>
+        </div>
+
+        <div id="decisionBody" hidden>
+          <div class="verdict" id="verdict">
+            <div class="verdict-icon" id="verdictIcon" aria-hidden="true"></div>
+            <div>
+              <span class="verdict-label" id="verdictLabel">&mdash;</span>
+              <p class="verdict-reason" id="verdictReason">&mdash;</p>
+            </div>
+          </div>
+
+          <dl class="facts invoice-facts">
+            <div><dt>Invoice</dt><dd class="mono" id="dInvoiceId">&mdash;</dd></div>
+            <div><dt>Payee</dt><dd class="mono" id="dPayee">&mdash;</dd></div>
+            <div><dt>Amount</dt><dd id="dAmount">&mdash;</dd></div>
+            <div><dt>On the allowlist</dt><dd id="dAllowed">&mdash;</dd></div>
+          </dl>
+
+          <div class="actions">
+            <button id="askButton" class="btn btn-ghost" type="button">
+              Ask the policy
+            </button>
+            <button id="payButton" class="btn btn-primary" type="button">
+              Let the agent try
+            </button>
+          </div>
+          <p class="result" id="actionResult" role="status"></p>
+        </div>
+      </section>
+
+      <!-- ── The invoices ────────────────────────────────────────── -->
+      <section class="panel invoices" aria-labelledby="invoicesHeading">
+        <div class="panel-head">
+          <h2 id="invoicesHeading">Invoices</h2>
+          <span class="hint" id="invoiceCount"></span>
+        </div>
+        <ul id="invoiceList" class="invoice-list">
+          <li class="empty">Loading…</li>
+        </ul>
+      </section>
+
+      <!-- ── The trail ───────────────────────────────────────────── -->
+      <section class="panel trail" aria-labelledby="trailHeading">
+        <div class="panel-head">
+          <h2 id="trailHeading">What happened</h2>
+          <span class="hint">Read straight from the chain</span>
+        </div>
+        <ol id="eventList" class="event-list">
+          <li class="empty">Loading…</li>
+        </ol>
+      </section>
+    </main>
+
+    <footer>
+      <span id="footerContracts">&mdash;</span>
+      <span>QDay Aevum Builder Challenge #1 &middot; test tokens only</span>
+    </footer>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

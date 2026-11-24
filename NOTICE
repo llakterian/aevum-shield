@@ -1,0 +1,76 @@
+# NOTICE
+
+Aevum Shield
+Copyright (c) 2026 Leonard Cheruiyot Sambu, trading as Llakterian
+
+This project is licensed under the MIT License. See `LICENSE`.
+
+---
+
+## Third-party dependencies
+
+### forge-std
+
+- **Source:** https://github.com/foundry-rs/forge-std
+- **Version:** v1.17.0 (pinned as a git submodule)
+- **Licence:** MIT
+- **Copyright:** Copyright (c) 2020 Foundry contributors
+- **Used for:** the test framework (`Test.sol`, `Script.sol`), the assertion
+  library, the console logging library and the cheatcode interface.
+
+The MIT licence text ships with the dependency at
+`lib/forge-std/LICENSE-MIT` and is reproduced in `lib/forge-std/LICENSE`.
+
+### OpenZeppelin Contracts
+
+- **Source:** https://github.com/OpenZeppelin/openzeppelin-contracts
+- **Version:** v5.7.0 (pinned as a git submodule)
+- **Licence:** MIT
+- **Copyright:** Copyright (c) 2018-2025 The OpenZeppelin Foundation and the
+  OpenZeppelin contributors
+- **Used for:** `IERC20`, `IERC20Metadata`, `SafeERC20`, `Ownable`,
+  `Ownable2Step` and `ReentrancyGuard`.
+
+The MIT licence text ships with the dependency at
+`lib/openzeppelin-contracts/LICENSE-MIT` and is reproduced in
+`lib/openzeppelin-contracts/LICENSE`.
+
+### Solidity
+
+- **Version:** 0.8.35
+- **Licence:** GPL-3.0 (the compiler itself, not the output)
+- **Copyright:** Copyright (c) 2015-2025 The Solidity Developers
+
+The Solidity compiler is used to build the contracts. Compiler output is not
+covered by the compiler's licence. For reference, the compiler's licence is
+at https://github.com/ethereum/solidity/blob/develop/LICENSE.
+
+---
+
+## Borrowed code
+
+No third-party source was copied into this repository. Every contract and
+test file in `src/`, `test/` and `script/` was written for this project.
+
+The test-only `MockToken` in `test/mocks/MockToken.sol` is a deliberately
+minimal ERC-20 written for this repository. It is not copied from
+OpenZeppelin or anywhere else. It exists to model tUSD8's six decimals
+exactly, because the real token uses six and a mock with eighteen would
+hide a whole class of bug.
+
+Where a pattern follows a well-known idiom — for example `check`/`approve`
+separating a read-only decision from the state-changing action, or
+`SafeERC20` for token calls — the dependency is imported and credited above
+rather than reimplemented.
+
+---
+
+## Test tokens
+
+This project interacts with **tUSD8**, a test-only stablecoin on QDay Aevum
+Testnet, at `0x456569838f1d43009A91ebA4263147Afd7233483`.
+
+tUSD8 is issued by QDay (a product of PQA Labs) for testing on Aevum
+Testnet. It has no value, it is not tradeable on any public exchange, and
+nothing in this repository promises or issues it. Any deployment of these
+contracts on a public network would require a different token.

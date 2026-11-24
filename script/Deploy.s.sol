@@ -3,6 +3,7 @@ pragma solidity ^0.8.35;
 
 import {Script, console2} from "forge-std/Script.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {PayPolicy} from "../src/PayPolicy.sol";
 import {InvoiceEscrow} from "../src/InvoiceEscrow.sol";
 import {PaymentAgent} from "../src/PaymentAgent.sol";
@@ -22,21 +23,47 @@ import {PaymentAgent} from "../src/PaymentAgent.sol";
  * A deployment where one address controls everything would not be a
  * control plane, it would be a suggestion.
  *
+ * Each role's configuration is sent by that role's own key, because every
+ * one of those calls is owner-gated. When a role's key is not available
+ * the script says so rather than silently skipping the setup.
+ *
  * Configuration comes from the environment, with sensible defaults so a
  * clean checkout can deploy in one command:
  *
  *   DEPLOYER_PRIVATE_KEY  the key that pays for the deployment
  *   TUSD8                 0x456569838f1d43009A91ebA4263147Afd7233483
- *   PAYER                 the payer's address  (default: the deployer)
- *   MERCHANT              the merchant's address (default: the deployer)
- *   PAYEE                 the payee's address   (default: the deployer)
+ *   PAYER_KEY             the payer's key   (default: the deployer)
+ *   MERCHANT_KEY          the merchant's key (default: the deployer)
+ *   AGENT_KEY             the agent's key    (default: the deployer)
+ *   PAYEE                 the payee's address (default: the deployer)
  *   DAILY_CAP_TUSD8       the payer's daily cap in whole tUSD8 (default: 50)
- *   AGENT_CAP_TUSD8       the agent's own daily cap in whole tUSD8 (default: 20)
+ *   AGENT_CAP_TUSD8       the agent's own daily cap in whole tUSD8 (default: 30)
  *   DISPUTE_WINDOW        seconds before a merchant may settle (default: 60)
  *   FUNDING_TUSD8         how much tUSD8 to move into the policy (default: 100)
  */
 contract Deploy is Script {
+    using SafeERC20 for IERC20;
+
     uint256 internal constant WHOLE = 1_000_000; // tUSD8 has 6 decimals
+
+    /// @dev Everything the deployment needs, read once.
+    ///
+    /// It is a struct rather than a pile of locals because the compiler
+    /// runs out of stack slots otherwise, and the alternative — dropping
+    /// the separate roles to save a stack slot — would give up the one
+    /// property the deployment exists to show.
+    struct Config {
+        uint256 deployerKey;
+        uint256 payerKey;
+        uint256 merchantKey;
+        uint256 agentKey;
+        address token;
+        address payee;
+        uint256 dailyCapWhole;
+        uint256 agentCapWhole;
+        uint64 disputeWindow;
+        uint256 fundingWhole;
+    }
 
     struct Deployment {
         address escrow;
@@ -51,69 +78,100 @@ contract Deploy is Script {
     Deployment public deployment;
 
     function run() external {
+        Config memory c = _readConfig();
+        _deployContracts(c);
+        _configureEscrow(c);
+        _configurePolicy(c);
+        _fundPolicy(c);
+        _report(c);
+    }
+
+    /// @dev Read the configuration out of the environment.
+    function _readConfig() private view returns (Config memory c) {
         uint256 deployerKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        address deployer = vm.addr(deployerKey);
 
-        address token = vm.envOr("TUSD8", address(0x456569838f1d43009A91ebA4263147Afd7233483));
-        address payer = vm.envOr("PAYER", deployer);
-        address merchant = vm.envOr("MERCHANT", deployer);
-        address payee = vm.envOr("PAYEE", deployer);
-        uint256 dailyCapWhole = vm.envOr("DAILY_CAP_TUSD8", uint256(50));
-        uint256 agentCapWhole = vm.envOr("AGENT_CAP_TUSD8", uint256(20));
-        uint64 disputeWindow = uint64(vm.envOr("DISPUTE_WINDOW", uint256(60)));
-        uint256 fundingWhole = vm.envOr("FUNDING_TUSD8", uint256(100));
+        c.deployerKey = deployerKey;
+        c.payerKey = vm.envOr("PAYER_KEY", deployerKey);
+        c.merchantKey = vm.envOr("MERCHANT_KEY", deployerKey);
+        c.agentKey = vm.envOr("AGENT_KEY", deployerKey);
+        c.token = vm.envOr("TUSD8", address(0x456569838f1d43009A91ebA4263147Afd7233483));
+        c.payee = vm.envOr("PAYEE", vm.addr(deployerKey));
+        c.dailyCapWhole = vm.envOr("DAILY_CAP_TUSD8", uint256(50));
+        c.agentCapWhole = vm.envOr("AGENT_CAP_TUSD8", uint256(30));
+        c.disputeWindow = uint64(vm.envOr("DISPUTE_WINDOW", uint256(60)));
+        c.fundingWhole = vm.envOr("FUNDING_TUSD8", uint256(100));
 
-        require(token != address(0), "TUSD8 address is not set");
+        require(c.token != address(0), "TUSD8 address is not set");
+    }
 
-        vm.startBroadcast(deployerKey);
+    /// @dev Put the three contracts on chain. The deployer pays for them.
+    function _deployContracts(Config memory c) private {
+        vm.startBroadcast(c.deployerKey);
 
         // The merchant owns the escrow. The payer owns the policy.
-        InvoiceEscrow escrow = new InvoiceEscrow(token, merchant);
-        PayPolicy policy = new PayPolicy(token, payer);
-        PaymentAgent agent = new PaymentAgent(address(policy));
-
-        escrow.setDisputeWindow(disputeWindow);
-
-        // The payer's rules. These are owner calls, so they only work when
-        // the payer is the broadcaster.
-        if (payer == deployer) {
-            policy.setEscrow(address(escrow), true);
-            policy.setPayee(payee, true);
-            policy.setOperator(address(agent), true);
-            policy.setOperatorCap(address(agent), agentCapWhole * WHOLE);
-            policy.setCaps(
-                dailyCapWhole * WHOLE, dailyCapWhole * WHOLE, dailyCapWhole * WHOLE
-            );
-        }
-
-        // Put the money in the policy. The policy is what holds the payer's
-        // funds; an escrow never touches the payer's wallet.
-        uint256 funding = fundingWhole * WHOLE;
-        require(IERC20(token).transfer(address(policy), funding), "funding transfer failed");
+        deployment.escrow = address(new InvoiceEscrow(c.token, vm.addr(c.merchantKey)));
+        deployment.policy = address(new PayPolicy(c.token, vm.addr(c.payerKey)));
+        deployment.agent = address(new PaymentAgent(deployment.policy));
 
         vm.stopBroadcast();
+    }
 
-        deployment = Deployment({
-            escrow: address(escrow),
-            policy: address(policy),
-            agent: address(agent),
-            token: token,
-            payer: payer,
-            merchant: merchant,
-            payee: payee
-        });
+    /// @dev The merchant sets the dispute window. It is owner-gated on the
+    /// escrow, so the merchant's key has to send it.
+    function _configureEscrow(Config memory c) private {
+        vm.startBroadcast(c.merchantKey);
+        InvoiceEscrow(deployment.escrow).setDisputeWindow(c.disputeWindow);
+        vm.stopBroadcast();
+    }
+
+    /// @dev The payer writes the rules. Every one of these is owner-gated
+    /// on the policy, so the payer's key has to send them.
+    function _configurePolicy(Config memory c) private {
+        PayPolicy policy = PayPolicy(deployment.policy);
+
+        vm.startBroadcast(c.payerKey);
+        policy.setEscrow(deployment.escrow, true);
+        policy.setPayee(c.payee, true);
+
+        // Two operators. The contract is the automatic executor; the
+        // external key is the AI agent, which is the thing this project is
+        // actually about. Both have their own daily cap.
+        policy.setOperator(deployment.agent, true);
+        policy.setOperatorCap(deployment.agent, c.agentCapWhole * WHOLE);
+        policy.setOperator(vm.addr(c.agentKey), true);
+        policy.setOperatorCap(vm.addr(c.agentKey), c.agentCapWhole * WHOLE);
+
+        policy.setCaps(c.dailyCapWhole * WHOLE, c.dailyCapWhole * WHOLE, c.dailyCapWhole * WHOLE);
+        vm.stopBroadcast();
+    }
+
+    /// @dev Put the money in the policy. The policy is what holds the
+    /// payer's funds; an escrow never touches the payer's wallet.
+    function _fundPolicy(Config memory c) private {
+        vm.startBroadcast(c.deployerKey);
+        IERC20(c.token).safeTransfer(deployment.policy, c.fundingWhole * WHOLE);
+        vm.stopBroadcast();
+    }
+
+    /// @dev Print what was deployed, for the run log and the README.
+    function _report(Config memory c) private {
+        deployment.token = c.token;
+        deployment.payer = vm.addr(c.payerKey);
+        deployment.merchant = vm.addr(c.merchantKey);
+        deployment.payee = c.payee;
 
         console2.log("=== Aevum Shield deployed ===");
-        console2.log("tUSD8        ", token);
-        console2.log("InvoiceEscrow", address(escrow));
-        console2.log("PayPolicy    ", address(policy));
-        console2.log("PaymentAgent ", address(agent));
-        console2.log("payer        ", payer);
-        console2.log("merchant     ", merchant);
-        console2.log("payee        ", payee);
-        console2.log("daily cap    ", dailyCapWhole);
-        console2.log("agent cap    ", agentCapWhole);
-        console2.log("dispute secs ", disputeWindow);
-        console2.log("funded       ", funding);
+        console2.log("tUSD8        ", deployment.token);
+        console2.log("InvoiceEscrow", deployment.escrow);
+        console2.log("PayPolicy    ", deployment.policy);
+        console2.log("PaymentAgent ", deployment.agent);
+        console2.log("payer        ", deployment.payer);
+        console2.log("merchant     ", deployment.merchant);
+        console2.log("agent key    ", vm.addr(c.agentKey));
+        console2.log("payee        ", deployment.payee);
+        console2.log("daily cap    ", c.dailyCapWhole);
+        console2.log("agent cap    ", c.agentCapWhole);
+        console2.log("dispute secs ", c.disputeWindow);
+        console2.log("funded       ", c.fundingWhole * WHOLE);
     }
 }

@@ -1,0 +1,19 @@
+{
+  "name": "aevum-shield-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Aevum Shield demonstration: a live view of a payer's spending policy and an agent that has to live inside it.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs",
+    "agent": "node agent.mjs"
+  },
+  "dependencies": {
+    "viem": "^2.58.6"
+  }
+}

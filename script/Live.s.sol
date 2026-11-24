@@ -29,13 +29,28 @@ import {PaymentAgent} from "../src/PaymentAgent.sol";
  *
  *   ESCROW, POLICY, AGENT   the deployed contract addresses
  *   MERCHANT_KEY            the key that owns the escrow
+ *   PAYER_KEY               the key that owns the policy
  *   TUSD8                   the token address
  *   PAYEE                   who receives the money on settlement
  *   AMOUNT_TUSD8            the invoice amount in whole tUSD8 (default: 25)
  *   BIG_AMOUNT_TUSD8        the over-cap invoice amount (default: 500)
+ *
+ * Note which key does what. Step 1 and step 2 are the merchant's business:
+ * it writes the invoice and it settles it. Step 3 is the payer's: only the
+ * policy's owner or the operator that made the reservation may refund.
  */
 contract Live is Script {
     uint256 internal constant WHOLE = 1_000_000;
+
+    /// @dev A fixed deadline, not `block.timestamp + n`.
+    ///
+    /// `forge script` runs the script twice — once to simulate, once to
+    /// broadcast — and the two runs are at different timestamps. An invoice
+    /// id is a hash of its terms, and the deadline is one of them, so a
+    /// relative deadline makes the simulated id and the on-chain id
+    /// disagree. A fixed deadline makes them agree, which is what lets the
+    /// printed id be used to settle the invoice in step 2.
+    uint64 internal constant DEMO_DEADLINE = 1_893_456_000; // 2030-01-01Z
 
     InvoiceEscrow escrow;
     PayPolicy policy;
@@ -74,7 +89,7 @@ contract Live is Script {
         vm.startBroadcast(merchantKey);
 
         // --- The merchant writes an invoice. ---------------------------
-        uint64 deadline = uint64(block.timestamp + 1 days);
+        uint64 deadline = DEMO_DEADLINE;
         bytes32 invoiceId = escrow.createInvoice(payee, amount, deadline);
         console2.log("invoice      ");
         console2.logBytes32(invoiceId);
@@ -138,14 +153,21 @@ contract Live is Script {
                                 STEP 3
     //////////////////////////////////////////////////////////////*/
 
-    function _stepRefund(uint256 merchantKey) internal {
+    function _stepRefund(uint256) internal {
         bytes32 invoiceId = vm.envBytes32("INVOICE_ID");
 
-        vm.startBroadcast(merchantKey);
+        // The refund is the payer's, not the merchant's. The policy only
+        // lets its owner or the operator that made the reservation give
+        // the money back, so this step is sent by the payer's key.
+        uint256 payerKey = vm.envUint("PAYER_KEY");
+
+        vm.startBroadcast(payerKey);
         policy.refund(address(escrow), invoiceId);
         vm.stopBroadcast();
 
-        console2.log("refunded. escrow now holds:", IERC20(token).balanceOf(address(escrow)) / WHOLE, "tUSD8");
+        console2.log(
+            "refunded. escrow now holds:", IERC20(token).balanceOf(address(escrow)) / WHOLE, "tUSD8"
+        );
         console2.log("policy now holds:", IERC20(token).balanceOf(address(policy)) / WHOLE, "tUSD8");
     }
 }

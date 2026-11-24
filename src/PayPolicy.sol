@@ -404,10 +404,8 @@ contract PayPolicy is Ownable2Step, ReentrancyGuard {
             return (Decision.EscrowNotTrusted, "that escrow is not on the trusted list");
         }
 
-        (address payee, uint256 amount, uint64 deadline, bool paidIn) = _readInvoice(
-            escrow,
-            invoiceId
-        );
+        (address payee, uint256 amount, uint64 deadline, bool paidIn) =
+            _readInvoice(escrow, invoiceId);
         if (amount == 0) {
             return (Decision.InvoiceUnknown, "that invoice does not exist");
         }
@@ -424,26 +422,19 @@ contract PayPolicy is Ownable2Step, ReentrancyGuard {
             return (Decision.PayeeNotAllowed, "that payee is not on the allowed list");
         }
         if (perPaymentCap != 0 && amount > perPaymentCap) {
-            return (
-                Decision.PerPaymentCapExceeded,
-                "the amount is above the single-payment cap"
-            );
+            return (Decision.PerPaymentCapExceeded, "the amount is above the single-payment cap");
         }
         if (perPayeeCap != 0 && _payeeSpent(payee) + amount > perPayeeCap) {
-            return (
-                Decision.PerPayeeCapExceeded,
-                "the amount is above the cap for that payee today"
-            );
+            return
+                (Decision.PerPayeeCapExceeded, "the amount is above the cap for that payee today");
         }
         if (dailyCap != 0 && _dailySpent() + amount > dailyCap) {
             return (Decision.DailyCapExceeded, "the amount is above the daily cap");
         }
         uint256 opCap = operatorDailyCap[operator];
         if (opCap != 0 && _operatorSpent(operator) + amount > opCap) {
-            return (
-                Decision.OperatorCapExceeded,
-                "the amount is above the operator's own daily cap"
-            );
+            return
+                (Decision.OperatorCapExceeded, "the amount is above the operator's own daily cap");
         }
         return (Decision.Allowed, "allowed");
     }
@@ -458,10 +449,7 @@ contract PayPolicy is Ownable2Step, ReentrancyGuard {
         returns (address payee, uint256 amount, uint64 deadline, bool paidIn)
     {
         try IInvoiceEscrow(escrow).invoiceDetails(invoiceId) returns (
-            address p,
-            uint256 a,
-            uint64 d,
-            bool paid
+            address p, uint256 a, uint64 d, bool paid
         ) {
             return (p, a, d, paid);
         } catch {
@@ -556,7 +544,11 @@ contract PayPolicy is Ownable2Step, ReentrancyGuard {
      * reservation, so a caller cannot redirect the money. The escrow's own
      * `pay` function is the normal caller.
      */
-    function pull(bytes32 invoiceId, address escrow) external nonReentrant returns (uint256 amount) {
+    function pull(bytes32 invoiceId, address escrow)
+        external
+        nonReentrant
+        returns (uint256 amount)
+    {
         Reservation storage r = reservations[invoiceId];
         if (r.amount == 0 || r.state == ReservationState.Released) {
             revert UnknownReservation(invoiceId);
