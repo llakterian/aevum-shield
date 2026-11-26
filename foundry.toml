@@ -5,7 +5,7 @@ libs = ["lib"]
 test = "test"
 script = "script"
 
-# Aevum Testnet — QDay Builder Challenge #1
+# Aevum Testnet: QDay Builder Challenge #1
 # https://qday.io/builder-challenge
 #
 #   Chain ID      44005  (`cast chain-id` returns 0xabe5 = 44005)
@@ -55,7 +55,7 @@ aevumws = "wss://rpc-test.qday.info"
 # The chain id matters more than it looks. `forge script` simulates with
 # the chain id from this file and then broadcasts to a chain that has its
 # own. Aevum is 44005 and the default profile says 44005, so the two
-# agree there. Anvil is 31337, so the default profile disagrees with it —
+# agree there. Anvil is 31337, so the default profile disagrees with it:
 # and `block.chainid` is one of the terms in the invoice id hash, which
 # made the simulation print ids that did not exist on the chain. Setting
 # the id here keeps the two in step.

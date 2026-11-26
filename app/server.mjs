@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 //
-// Aevum Shield — the demonstration server.
+// Aevum Shield. The demonstration server.
 //
 // It reads the payer's policy straight off the chain and shows what it
 // says. There is no database and no cache of the rules: every number on
@@ -89,7 +89,7 @@ const DECISIONS = [
 
 // A refusal explained in the user's terms rather than the contract's.
 const EXPLAIN = {
-  allowed: 'Every rule passed — the payee is allowed, the caps have room, and payments are not paused.',
+  allowed: 'Every rule passed. The payee is allowed, the caps have room, and payments are not paused.',
   'escrow-not-trusted': 'That merchant is not on the trusted list.',
   'invoice-unknown': 'That invoice does not exist.',
   'invoice-already-paid': 'That invoice has already been paid.',
@@ -104,7 +104,7 @@ const EXPLAIN = {
 };
 
 function short(address) {
-  if (!address) return '—';
+  if (!address) return '-';
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
@@ -352,7 +352,7 @@ async function askPolicy(invoiceId) {
 async function agentPays(invoiceId) {
   const decision = await askPolicy(invoiceId);
   if (!decision.allowed) {
-    // The agent refuses in words. It does not throw — a sentence is a
+    // The agent refuses in words. It does not throw. A sentence is a
     // better answer than a stack trace.
     return { paid: false, ...decision };
   }

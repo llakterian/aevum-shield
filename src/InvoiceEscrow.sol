@@ -19,7 +19,7 @@ import {IPayPolicy} from "./interfaces/IPayPolicy.sol";
  * does not have to trust the merchant with money it has not yet paid.
  *
  * The payment arrives by the escrow *pulling* from the payer's policy
- * contract. The escrow does not trust the payer to send the right amount —
+ * contract. The escrow does not trust the payer to send the right amount:
  * it asks the policy for the money, and the policy moves exactly the amount
  * it reserved for that invoice. The escrow checks its own balance before
  * and after, so a policy that claims to have paid but did not is caught.

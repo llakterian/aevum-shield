@@ -19,7 +19,7 @@ import {IInvoiceEscrow} from "./interfaces/IInvoiceEscrow.sol";
  *
  * This contract is the control plane. It holds the payer's funds and is the
  * only thing that can move them. Every payment out of it is checked against
- * rules the payer set in advance, and every decision — allowed or refused —
+ * rules the payer set in advance, and every decision, allowed or refused:
  * leaves a record on chain.
  *
  * Three properties the design leans on:
@@ -126,7 +126,7 @@ contract PayPolicy is Ownable2Step, ReentrancyGuard {
     mapping(address => bool) public escrowTrusted;
 
     /// @notice Operators allowed to request payments. This is where the AI
-    /// agent gets its authority — and its own daily cap.
+    /// agent gets its authority. And its own daily cap.
     mapping(address => bool) public operatorAllowed;
 
     /// @notice Per-operator daily cap. Zero means "no cap beyond the
@@ -163,7 +163,7 @@ contract PayPolicy is Ownable2Step, ReentrancyGuard {
     uint64 public dailyWindowDay;
 
     /// @notice When true, no new payments can be approved. Withdrawals and
-    /// reservation releases still work — a pause that trapped funds would be
+    /// reservation releases still work. A pause that trapped funds would be
     /// worse than no pause at all.
     bool public paused;
 
@@ -244,7 +244,7 @@ contract PayPolicy is Ownable2Step, ReentrancyGuard {
         emit EscrowSet(escrow, trusted);
     }
 
-    /// @notice Allow or disallow an operator — typically the AI agent.
+    /// @notice Allow or disallow an operator, typically the AI agent.
     function setOperator(address operator, bool allowed) external onlyOwner {
         operatorAllowed[operator] = allowed;
         emit OperatorSet(operator, allowed);
@@ -386,8 +386,8 @@ contract PayPolicy is Ownable2Step, ReentrancyGuard {
      * checked against this address, so the caller cannot borrow someone
      * else's budget.
      * @dev The agent calls this first, so it can tell the user *why* before
-     * it tries. The answer is not a guarantee — `approve` re-checks
-     * everything — but it is what makes the refusal explainable.
+     * it tries. The answer is not a guarantee, `approve` re-checks
+     * everything. But it is what makes the refusal explainable.
      *
      * The invoice's payee, amount and deadline are read from the escrow
      * itself. Taking them from the caller would let a confused or
@@ -440,7 +440,7 @@ contract PayPolicy is Ownable2Step, ReentrancyGuard {
     }
 
     /// @notice Read an invoice's terms from the escrow that holds it.
-    /// @dev A revert from the escrow — an unknown invoice — comes back as
+    /// @dev A revert from the escrow. An unknown invoice, comes back as
     /// zeroes rather than bubbling up, so the agent gets a decision it can
     /// explain instead of a stack trace.
     function _readInvoice(address escrow, bytes32 invoiceId)
@@ -616,7 +616,7 @@ contract PayPolicy is Ownable2Step, ReentrancyGuard {
         r.state = ReservationState.Released;
         invoiceApproved[invoiceId] = false;
 
-        // Hand the budget back — but only to the day it was taken from. If
+        // Hand the budget back. But only to the day it was taken from. If
         // the day has since rolled, that day's spend has already been
         // cleared and subtracting from today's would corrupt it.
         _rollDay();

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 //
-// Aevum Shield — the demonstration client.
+// Aevum Shield. The demonstration client.
 //
 // It polls the chain for the policy's state and asks the server what the
 // agent would decide. Nothing here decides anything: the verdicts come
@@ -15,10 +15,10 @@ let busy = false;
 
 /* ── Formatting ──────────────────────────────────────────────── */
 
-const short = (a) => (!a || a === '0x') ? '—' : `${a.slice(0, 6)}…${a.slice(-4)}`;
+const short = (a) => (!a || a === '0x') ? '-' : `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 function units(value, decimals) {
-  if (value === null || value === undefined) return '—';
+  if (value === null || value === undefined) return '-';
   const n = Number(value);
   const d = decimals ?? state?.token?.decimals ?? 6;
   const text = n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: d });
@@ -142,12 +142,12 @@ function renderDecision(decision, invoice) {
   $('verdictLabel').textContent = decision.allowed ? 'Allowed' : 'Refused';
   $('verdictReason').textContent = decision.explanation ?? decision.reason;
 
-  $('dInvoiceId').textContent = invoice ? `${invoice.id.slice(0, 10)}…${invoice.id.slice(-6)}` : '—';
-  $('dPayee').textContent = invoice ? short(invoice.payee) : '—';
-  $('dAmount').textContent = invoice ? units(invoice.amount, state.token.decimals) : '—';
+  $('dInvoiceId').textContent = invoice ? `${invoice.id.slice(0, 10)}…${invoice.id.slice(-6)}` : '-';
+  $('dPayee').textContent = invoice ? short(invoice.payee) : '-';
+  $('dAmount').textContent = invoice ? units(invoice.amount, state.token.decimals) : '-';
 
   const allowed = state.payees.find((p) => invoice && p.address === invoice.payee);
-  $('dAllowed').textContent = allowed ? (allowed.allowed ? 'yes' : 'no') : '—';
+  $('dAllowed').textContent = allowed ? (allowed.allowed ? 'yes' : 'no') : '-';
 
   $('payButton').disabled = busy || invoice.status !== 'created';
   $('askButton').disabled = busy;
@@ -242,7 +242,7 @@ async function askTheAgent() {
       $('actionResult').textContent = `Paid. ${result.txHash?.slice(0, 14)}…`;
       $('actionResult').className = 'result ok';
     } else {
-      $('actionResult').textContent = `Refused — ${result.reason}`;
+      $('actionResult').textContent = `Refused, ${result.reason}`;
       $('actionResult').className = 'result no';
     }
     await refresh();

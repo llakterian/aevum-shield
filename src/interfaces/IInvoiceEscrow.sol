@@ -5,7 +5,7 @@ pragma solidity ^0.8.35;
  * @title IInvoiceEscrow
  * @notice The part of a merchant escrow that a payer's policy needs.
  * @dev Kept deliberately small and stable. The policy reads the invoice
- * from the escrow rather than trusting the caller to describe it — if the
+ * from the escrow rather than trusting the caller to describe it. If the
  * agent can lie about the payee or the deadline, the allowlist is not a
  * control, it is a suggestion.
  */

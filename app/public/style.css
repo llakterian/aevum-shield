@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: MIT
  *
- * Aevum Shield — the demonstration interface.
+ * Aevum Shield. The demonstration interface.
  *
  * Two ideas drive the styling. First, a refusal is the interesting event,
  * so it gets the visual weight: a verdict that fills its panel and a reason
  * written as a sentence. Second, everything is legible at a glance during a
- * live demo — large figures, monospace addresses, no hover-only information.
+ * live demo, large figures, monospace addresses, no hover-only information.
  */
 
 :root {

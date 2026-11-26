@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 //
-// Aevum Shield — the agent adapter.
+// Aevum Shield. The agent adapter.
 //
 // The point of this project is that an agent cannot be trusted with money.
 // This file is where that claim gets tested. It runs a series of attacks
-// against the deployed policy — every one of them is a real call or a
-// real transaction against the real contract — and reports what the
+// against the deployed policy. Every one of them is a real call or a
+// real transaction against the real contract. And reports what the
 // contract said.
 //
 // There is no mock policy here and no simulated refusal. Each attempt is
@@ -36,7 +36,7 @@ const config = {
   merchant: process.env.MERCHANT ?? '',
   payee: process.env.PAYEE ?? '',
   // The payer's key. The payer owns the policy and sets the rules. The
-  // harness never uses it to attack the policy — an attack signed by the
+  // harness never uses it to attack the policy. An attack signed by the
   // owner is not an attack.
   payerKey: process.env.DEPLOYER_PRIVATE_KEY ?? '',
   // The agent's key. This is the compromised party: it is a registered
@@ -259,7 +259,7 @@ async function runAttempts() {
   // also the point: the agent's own remaining budget is a number the
   // policy will not let it exceed, so the harness sizes its test to fit
   // inside it. A second run against the same deployment therefore still
-  // works — it just tests with whatever is left.
+  // works. It just tests with whatever is left.
   const agentAddress = agentSigner ? agentSigner.account.address : config.agent;
   const [perPaymentCap, dailyRemaining, operatorRemaining, perPayeeRemaining] = await Promise.all([
     publicClient.readContract({
@@ -341,7 +341,7 @@ async function runAttempts() {
     });
   }
 
-  // 4. The agent tries a different merchant's escrow — one the payer has
+  // 4. The agent tries a different merchant's escrow. One the payer has
   //    never approved. The policy must refuse before it reads anything
   //    from that escrow.
   {
@@ -393,12 +393,12 @@ async function runAttempts() {
       expectation: 'the second approval is refused and the budget is charged once',
       passed: first.ok && !second.ok && charged === budget,
       detail: !second.ok
-        ? `the chain refused it: ${second.error} — the budget was charged ${formatUnits(charged, decimals)}, once`
-        : `THE SECOND APPROVAL WENT THROUGH — the budget was spent twice (${formatUnits(charged, decimals)} charged)`,
+        ? `the chain refused it: ${second.error}. The budget was charged ${formatUnits(charged, decimals)}, once`
+        : `THE SECOND APPROVAL WENT THROUGH. The budget was spent twice (${formatUnits(charged, decimals)} charged)`,
       txHash: second.hash,
     });
 
-    // 6. And now that it is approved, the money may be pulled — exactly
+    // 6. And now that it is approved, the money may be pulled, exactly
     //    once, and exactly the approved amount.
     {
       const balanceBefore = await publicClient.readContract({
@@ -426,7 +426,7 @@ async function runAttempts() {
         expectation: 'exactly the approved amount moves',
         passed: paid.ok && moved === budget,
         detail: paid.ok
-          ? `the escrow received ${formatUnits(moved, decimals)} — the approved amount, no more`
+          ? `the escrow received ${formatUnits(moved, decimals)}. The approved amount, no more`
           : `the chain refused it: ${paid.error}`,
         txHash: paid.hash,
       });
@@ -443,7 +443,7 @@ async function runAttempts() {
         expectation: 'the chain refuses it',
         passed: !again.ok,
         detail: again.ok
-          ? 'THE MONEY MOVED TWICE — the policy has a hole in it'
+          ? 'THE MONEY MOVED TWICE. The policy has a hole in it'
           : `the chain refused it: ${again.error}`,
         txHash: again.hash,
       });
@@ -463,7 +463,7 @@ async function runAttempts() {
       expectation: 'the chain refuses it',
       passed: !result.ok,
       detail: result.ok
-        ? 'THE CAPS WERE CHANGED — the policy has a hole in it'
+        ? 'THE CAPS WERE CHANGED. The policy has a hole in it'
         : `the chain refused it: ${result.error}`,
       txHash: result.hash,
     });
@@ -482,7 +482,7 @@ async function runAttempts() {
       expectation: 'the chain refuses it',
       passed: !result.ok,
       detail: result.ok
-        ? 'THE ALLOWLIST WAS CHANGED — the policy has a hole in it'
+        ? 'THE ALLOWLIST WAS CHANGED. The policy has a hole in it'
         : `the chain refused it: ${result.error}`,
       txHash: result.hash,
     });
@@ -501,7 +501,7 @@ async function runAttempts() {
       expectation: 'the chain refuses it',
       passed: !result.ok,
       detail: result.ok
-        ? 'OWNERSHIP CHANGED — the policy has a hole in it'
+        ? 'OWNERSHIP CHANGED. The policy has a hole in it'
         : `the chain refused it: ${result.error}`,
       txHash: result.hash,
     });
@@ -520,7 +520,7 @@ async function runAttempts() {
       expectation: 'the chain refuses it',
       passed: !result.ok,
       detail: result.ok
-        ? 'THE FUNDS MOVED — the policy has a hole in it'
+        ? 'THE FUNDS MOVED. The policy has a hole in it'
         : `the chain refused it: ${result.error}`,
       txHash: result.hash,
     });
@@ -539,7 +539,7 @@ async function runAttempts() {
       expectation: 'the chain refuses it',
       passed: !result.ok,
       detail: result.ok
-        ? 'THE ESCROW WAS TRUSTED — the policy has a hole in it'
+        ? 'THE ESCROW WAS TRUSTED. The policy has a hole in it'
         : `the chain refused it: ${result.error}`,
       txHash: result.hash,
     });
@@ -556,7 +556,7 @@ if (!config.policy || !config.escrow || !config.agent) {
 }
 
 console.log();
-console.log(bold('Aevum Shield — what happens when the agent tries'));
+console.log(bold('Aevum Shield, what happens when the agent tries'));
 console.log(dim(`  policy ${config.policy}`));
 console.log(dim(`  escrow ${config.escrow}`));
 console.log(dim(`  agent  ${config.agent}`));

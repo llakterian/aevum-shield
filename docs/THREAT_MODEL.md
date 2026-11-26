@@ -1,6 +1,6 @@
 # Threat model
 
-**Aevum Shield** — payments under enforceable policy on QDay Aevum Testnet.
+**Aevum Shield**, payments under enforceable policy on QDay Aevum Testnet.
 
 This document is the argument that the control plane is safe. It lists what
 is being protected, who is trusted and who is not, what an attacker would
@@ -45,10 +45,10 @@ approve an invoice.
 
 There are four ways to reach the money.
 
-1. **Approval** — the agent asks the policy to reserve funds for an invoice.
-2. **Pull** — an escrow asks the policy for the money it reserved.
-3. **Settlement** — the merchant asks the escrow to release the money.
-4. **Recovery** — the payer asks the policy to return unreserved funds.
+1. **Approval**: the agent asks the policy to reserve funds for an invoice.
+2. **Pull**: an escrow asks the policy for the money it reserved.
+3. **Settlement**: the merchant asks the escrow to release the money.
+4. **Recovery**: the payer asks the policy to return unreserved funds.
 
 Each is analysed below, followed by the attacks that do not fit a single
 path.
@@ -87,7 +87,7 @@ The escrow asks the policy for the money; the policy moves it.
 | AT-12 | A third party pulls a reservation that is not theirs. | `pull` requires `msg.sender == r.escrow`. | `test_AnEscrowCannotPullAnotherEscrowsReservation` |
 | AT-13 | **One merchant's second invoice silently cancels the first.** | Each authorisation is a per-invoice reservation. An ERC-20 allowance is keyed by `(owner, spender)`, so approving a second invoice for the same merchant would have overwritten the first one's allowance. This was a real bug, found by the tests; the reservation design replaced it. | `test_TwoInvoicesForTheSameEscrowCanBothBePaid` |
 | AT-14 | A "policy" that says it paid but did not. | The escrow checks its **own balance before and after** the pull and requires the delta to equal the invoice amount exactly. It does not trust the return value. | `InvoiceEscrow.pay` |
-| AT-15 | Reentrancy through the token or the escrow. | `ReentrancyGuard` on every state-changing entry point in both contracts. | — |
+| AT-15 | Reentrancy through the token or the escrow. | `ReentrancyGuard` on every state-changing entry point in both contracts. | n/a |
 
 ### 3.3 Settlement and refund
 
@@ -95,7 +95,7 @@ The escrow asks the policy for the money; the policy moves it.
 
 | # | Attack | Mitigation | Test |
 | --- | --- | --- | --- |
-| AT-16 | The merchant settles before the payer can dispute. | `settle` reverts while the dispute window is open. The window starts when the **payment arrives**, not when the invoice was written — otherwise a merchant could write an invoice early and settle the moment the money landed. | `test_TheFullHappyPath`, `test_TheDisputeWindowStartsWhenThePaymentArrives` |
+| AT-16 | The merchant settles before the payer can dispute. | `settle` reverts while the dispute window is open. The window starts when the **payment arrives**, not when the invoice was written, otherwise a merchant could write an invoice early and settle the moment the money landed. | `test_TheFullHappyPath`, `test_TheDisputeWindowStartsWhenThePaymentArrives` |
 | AT-17 | The merchant refunds itself. | `refund` requires `msg.sender == inv.payer`, and the payer of record is the `PayPolicy` contract, not the merchant. The merchant cannot call it. | `test_AMerchantCannotRefund` |
 | AT-18 | The merchant settles twice. | `settled` is checked. | `test_AMerchantCannotSettleTwice` |
 | AT-19 | The merchant creates an invoice for someone else. | `createInvoice` is `onlyOwner`. | `test_AMerchantCannotCreateAnInvoiceForSomebodyElse` |
@@ -124,7 +124,7 @@ privileged path to get the money back, and every privileged path is another
 thing to get wrong. With this design, a paused policy still lets the payer
 release expired reservations and sweep unreserved funds.
 
-The risk of the opposite choice — a pause that cannot be undone — is
+The risk of the opposite choice. A pause that cannot be undone, is
 handled by `Ownable2Step`: transferring ownership takes two transactions,
 so a hijacked ownership change can be noticed and refused.
 
@@ -136,7 +136,7 @@ Every decision leaves a record:
 
 | Event | What it establishes |
 | --- | --- |
-| `DecisionRecorded(invoiceId, decision, reason)` | That a decision was made, what it was, and — for a refusal — the rule that produced it. The reason is a sentence, not a number. |
+| `DecisionRecorded(invoiceId, decision, reason)` | That a decision was made, what it was, and, for a refusal, the rule that produced it. The reason is a sentence, not a number. |
 | `ReservationMade(invoiceId, escrow, payee, amount, expiresAt)` | That a specific amount was committed to a specific payee through a specific escrow, and when it would lapse. |
 | `PaymentPulled(invoiceId, escrow, amount)` | That the money moved, to whom, and how much. |
 | `ReservationReleased(invoiceId, escrow, amount)` | That a commitment was withdrawn and the budget handed back. |
@@ -175,15 +175,15 @@ no residual risk is not a threat model.
    underpay. This is safe-by-failing, but it is a dependency.
 6. **Daily caps reset on UTC midnight, not on a rolling 24 hours.** A payer
    who spends at 23:59 and again at 00:01 can spend twice as much as they
-   intended across the boundary. This was chosen deliberately — "50 tUSD8 a
-   day" should mean a day, and a user should be able to say when it ends —
+   intended across the boundary. This was chosen deliberately, "50 tUSD8 a
+   day" should mean a day, and a user should be able to say when it ends:
    but it is a real property, not a subtlety.
 7. **The dispute window is a fixed number of seconds.** On the testnet
    demonstration it is set to 60 seconds so the demo does not have to wait
    a day. A production deployment would use 24 hours or a period chosen
    per invoice.
 8. **The owner can sweep unreserved funds at any time.** That is the
-   point of `recover` — a payer must be able to get their money back — but
+   point of `recover`. A payer must be able to get their money back. But
    it does mean a compromised owner key can take the unreserved balance.
 
 ---

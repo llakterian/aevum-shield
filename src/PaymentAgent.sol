@@ -10,8 +10,8 @@ import {IPaymentTarget} from "./interfaces/IPaymentTarget.sol";
  *
  * @dev The agent holds **no money and has no key that can move money**. It
  * has exactly one power: to ask the payer's policy to approve an invoice.
- * Everything that makes that safe — the allowlist, the caps, the pause, the
- * deadline — lives in the policy and is enforced there.
+ * Everything that makes that safe. The allowlist, the caps, the pause, the
+ * deadline, lives in the policy and is enforced there.
  *
  * That split is the point. If the agent had the funds, a prompt injection
  * would be a financial event. If the agent has a request, a prompt injection
